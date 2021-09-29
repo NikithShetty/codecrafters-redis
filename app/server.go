@@ -4,9 +4,9 @@ import (
 	"bufio"
 	"flag"
 	"fmt"
+	"io"
 	"net"
 	"os"
-	"strings"
 )
 
 func main() {
@@ -34,23 +34,28 @@ func handleConn(conn net.Conn) {
 
 	in := bufio.NewReader(conn)
 
-	cmd, err := in.ReadString('\n')
-	checkError(err)
-
-	fmt.Println("Read", len(cmd), "bytes")
-	fmt.Println(cmd)
-
-	if strings.Contains(cmd, "PING") {
-		msg := cmd[5:]
-
-		fmt.Println("msg", msg, len(msg))
-		if len(msg) > 0 {
-			conn.Write(okRespByte(msg))
-		} else {
-			conn.Write(okRespByte("PONG"))
+	for {
+		cmd, err := in.ReadString('\n')
+		if err == io.EOF {
+			break
 		}
-	} else {
-		conn.Write(errRespByte("Unknown cmd"))
+		checkError(err)
+
+		fmt.Println("Read", len(cmd), "bytes")
+		fmt.Println(cmd)
+
+		// if strings.Contains(cmd, "PING") || strings.Contains(cmd, "ping") {
+		// msg := cmd[5:]
+
+		// fmt.Println("msg", msg, len(msg))
+		// if len(msg) > 0 {
+		// 	conn.Write(okRespByte(msg))
+		// } else {
+		conn.Write(okRespByte("PONG"))
+		// }
+		// } else {
+		// 	conn.Write(errRespByte("-"))
+		// }
 	}
 }
 
