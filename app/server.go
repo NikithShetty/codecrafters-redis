@@ -1,10 +1,12 @@
 package main
 
 import (
+	"bufio"
 	"flag"
 	"fmt"
 	"net"
 	"os"
+	"strings"
 )
 
 func main() {
@@ -14,33 +16,55 @@ func main() {
 	addr := "0.0.0.0:" + *port
 
 	l, err := net.Listen("tcp", addr)
-	if err != nil {
-		fmt.Println("Failed to bind to port 6379")
-		os.Exit(1)
-	}
+	checkError(err)
+	defer l.Close()
+
 	fmt.Println("Listening at", addr)
 
 	for {
 		conn, err := l.Accept()
-		if err != nil {
-			fmt.Println("Error accepting connection: ", err.Error())
-			os.Exit(1)
-		}
+		checkError(err)
 
 		go handleConn(conn)
 	}
 }
 
 func handleConn(conn net.Conn) {
-	in := make([]byte, 10)
-	readN, err := conn.Read(in)
-	if err != nil {
-		fmt.Println(err)
+	defer conn.Close()
+
+	in := bufio.NewReader(conn)
+
+	cmd, err := in.ReadString('\n')
+	checkError(err)
+
+	fmt.Println("Read", len(cmd), "bytes")
+	fmt.Println(cmd)
+
+	if strings.Contains(cmd, "PING") {
+		msg := cmd[5:]
+
+		fmt.Println("msg", msg, len(msg))
+		if len(msg) > 0 {
+			conn.Write(okRespByte(msg))
+		} else {
+			conn.Write(okRespByte("PONG"))
+		}
+	} else {
+		conn.Write(errRespByte("Unknown cmd"))
 	}
+}
 
-	fmt.Println("Read", readN, "bytes")
-	fmt.Println(string(in))
-	conn.Write([]byte("+PONG\r\n"))
+func checkError(err error) {
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Fatal error: %s", err.Error())
+		os.Exit(1)
+	}
+}
 
-	conn.Close()
+func okRespByte(s string) []byte {
+	return []byte("+" + s + "\r\n")
+}
+
+func errRespByte(err string) []byte {
+	return []byte("-Error " + err + "\r\n")
 }
