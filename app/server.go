@@ -9,6 +9,16 @@ import (
 	"os"
 )
 
+type CmdStruct struct {
+	in  []byte
+	out chan []byte
+}
+
+type CmdQ = chan CmdStruct
+
+type ReadCmdQ = <-chan CmdStruct
+type WriteCmdQ = chan<- CmdStruct
+
 func main() {
 	fmt.Println("Starting tcp server..")
 
@@ -21,15 +31,41 @@ func main() {
 
 	fmt.Println("Listening at", addr)
 
+	cmdQ := make(CmdQ, 1)
+
+	go startEventLoop(cmdQ)
+
 	for {
 		conn, err := l.Accept()
 		checkError(err)
 
-		go handleConn(conn)
+		go handleConn(conn, cmdQ)
 	}
 }
 
-func handleConn(conn net.Conn) {
+func startEventLoop(cmdQ ReadCmdQ) {
+	fmt.Println("Started event loop")
+	for cmdChan := range cmdQ {
+		fmt.Println("Event loop: Got event")
+		cmd := cmdChan.in
+
+		fmt.Println("Event loop: ", string(cmd))
+		// if strings.Contains(cmd, "PING") || strings.Contains(cmd, "ping") {
+		// msg := cmd[5:]
+
+		// fmt.Println("msg", msg, len(msg))
+		// if len(msg) > 0 {
+		// 	conn.Write(okRespByte(msg))
+		// } else {
+		cmdChan.out <- okRespByte("PONG")
+		// }
+		// } else {
+		// 	conn.Write(errRespByte("-"))
+		// }
+	}
+}
+
+func handleConn(conn net.Conn, cmdQ WriteCmdQ) {
 	defer conn.Close()
 
 	in := bufio.NewReader(conn)
@@ -44,18 +80,15 @@ func handleConn(conn net.Conn) {
 		fmt.Println("Read", len(cmd), "bytes")
 		fmt.Println(cmd)
 
-		// if strings.Contains(cmd, "PING") || strings.Contains(cmd, "ping") {
-		// msg := cmd[5:]
+		in := []byte(cmd)
+		outChan := make(chan []byte)
+		// Add cmd to be processed onto cmdQ
+		cmdQ <- CmdStruct{in, outChan}
 
-		// fmt.Println("msg", msg, len(msg))
-		// if len(msg) > 0 {
-		// 	conn.Write(okRespByte(msg))
-		// } else {
-		conn.Write(okRespByte("PONG"))
-		// }
-		// } else {
-		// 	conn.Write(errRespByte("-"))
-		// }
+		cmdRes := <-outChan
+		close(outChan)
+
+		conn.Write(cmdRes)
 	}
 }
 
