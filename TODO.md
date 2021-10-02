@@ -1,3 +1,8 @@
+- [_] Add unit/integration tests
 - [_] Close connection on EOF
 - [_] fix readCLRF function
-- [_] Maybe values in golang
+- [_] Proper debug log level control via cli
+- [_] Parsing and adding command options to `Command` data struct
+- [_] Perf test
+- [_] Implement AOF (append-only file) persistance
+- [_] Implement restoration of state from AOF
