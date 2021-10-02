@@ -213,6 +213,12 @@ func readCmd(arr []string) (*commands.Command, error) {
 	case string(commands.PING):
 		cmd = &commands.Command{CmdType: commands.PING, Data: arr[1:]}
 
+	case string(commands.GET):
+		cmd = &commands.Command{CmdType: commands.GET, Data: arr[1:]}
+
+	case string(commands.SET):
+		cmd = &commands.Command{CmdType: commands.SET, Data: arr[1:]}
+
 	default:
 		return nil, errors.New("unknown command " + cmdStr)
 	}

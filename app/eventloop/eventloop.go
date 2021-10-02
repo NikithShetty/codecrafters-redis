@@ -1,12 +1,14 @@
 package eventloop
 
 import (
-	"codecrafters-redis/app/commands"
 	"fmt"
 	"strings"
+
+	"codecrafters-redis/app/commands"
+	"codecrafters-redis/app/database"
 )
 
-func StartEventLoop(cmdQ ReadCmdQ) {
+func StartEventLoop(db *database.RedisStore, cmdQ ReadCmdQ) {
 	fmt.Println("Started event loop")
 	for cmdChan := range cmdQ {
 		cmd := cmdChan.In
@@ -22,12 +24,22 @@ func StartEventLoop(cmdQ ReadCmdQ) {
 		case commands.PING:
 			res = ping(cmd.Data)
 
+		case commands.GET:
+			res = get(db, strings.Join(cmd.Data, " "))
+
+		case commands.SET:
+			res = set(db, cmd.Data[0], strings.Join(cmd.Data[1:], " "))
+
 		default:
 			res = commands.NewErrResult("unknown command " + string(cmd.CmdType))
 		}
 
 		cmdChan.Out <- res
 	}
+}
+
+func CreateCmdQueue() CmdQ {
+	return make(CmdQ, 1)
 }
 
 func echo(str []string) *commands.CmdResult {
@@ -40,4 +52,14 @@ func ping(str []string) *commands.CmdResult {
 	} else {
 		return commands.NewBulkStringResult("PONG")
 	}
+}
+
+func get(db *database.RedisStore, key string) *commands.CmdResult {
+	v := db.Get(key)
+	return commands.NewBulkStringResult(v)
+}
+
+func set(db *database.RedisStore, key string, value string) *commands.CmdResult {
+	db.Set(key, value)
+	return commands.NewSimpleStringResult("OK")
 }

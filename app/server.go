@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 
+	"codecrafters-redis/app/database"
 	"codecrafters-redis/app/eventloop"
 	"codecrafters-redis/app/handler"
 	"codecrafters-redis/app/utils"
@@ -22,9 +23,9 @@ func main() {
 
 	fmt.Println("Listening at", addr)
 
-	cmdQ := make(eventloop.CmdQ, 1)
-
-	go eventloop.StartEventLoop(cmdQ)
+	kvstore := database.InitDatabase()
+	cmdQ := eventloop.CreateCmdQueue()
+	go eventloop.StartEventLoop(kvstore, cmdQ)
 
 	for {
 		conn, err := l.Accept()

@@ -1,0 +1,2 @@
+- [_] Close connection on EOF
+- [_] fix readCLRF function
