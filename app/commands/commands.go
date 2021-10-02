@@ -5,10 +5,11 @@ import "errors"
 type CmdType string
 
 const (
-	ECHO CmdType = "echo"
-	PING CmdType = "ping"
-	GET  CmdType = "get"
-	SET  CmdType = "set"
+	ECHO  CmdType = "echo"
+	PING  CmdType = "ping"
+	GET   CmdType = "get"
+	SET   CmdType = "set"
+	SETPX CmdType = "setpx"
 )
 
 type Command struct {
@@ -30,8 +31,10 @@ type CmdResult struct {
 	DataType     RedisDataType
 	err          string
 	simpleString string
-	bulkString   string
-	array        []string
+
+	// Using pointers to add support for nil values
+	bulkString *string
+	array      *[]string
 }
 
 func NewErrResult(err string) *CmdResult {
@@ -42,11 +45,11 @@ func NewSimpleStringResult(str string) *CmdResult {
 	return &CmdResult{DataType: SimpleString, simpleString: str}
 }
 
-func NewBulkStringResult(bulkStr string) *CmdResult {
+func NewBulkStringResult(bulkStr *string) *CmdResult {
 	return &CmdResult{DataType: BulkString, bulkString: bulkStr}
 }
 
-func NewArrResult(arr []string) *CmdResult {
+func NewArrResult(arr *[]string) *CmdResult {
 	return &CmdResult{DataType: Array, array: arr}
 }
 
@@ -70,18 +73,18 @@ func (cmdRes *CmdResult) GetSimpleStr() (string, error) {
 	return "", errors.New("illegal get operation on data type" + string(cmdRes.DataType))
 }
 
-func (cmdRes *CmdResult) GetBlkStr() (string, error) {
+func (cmdRes *CmdResult) GetBlkStr() (*string, error) {
 	if cmdRes.DataType == BulkString {
 		return cmdRes.bulkString, nil
 	}
 
-	return "", errors.New("illegal get operation on data type" + string(cmdRes.DataType))
+	return nil, errors.New("illegal get operation on data type" + string(cmdRes.DataType))
 }
 
-func (cmdRes *CmdResult) GetArr() ([]string, error) {
+func (cmdRes *CmdResult) GetArr() (*[]string, error) {
 	if cmdRes.DataType == Array {
 		return cmdRes.array, nil
 	}
 
-	return []string{}, errors.New("illegal get operation on data type" + string(cmdRes.DataType))
+	return nil, errors.New("illegal get operation on data type" + string(cmdRes.DataType))
 }

@@ -1,2 +1,3 @@
 - [_] Close connection on EOF
 - [_] fix readCLRF function
+- [_] Maybe values in golang

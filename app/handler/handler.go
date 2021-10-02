@@ -30,7 +30,7 @@ func HandleConn(conn net.Conn, cmdQ eventloop.WriteCmdQ) {
 		}
 		utils.CheckError(err)
 
-		utils.LogInfo("Decoded command ", inCmd.CmdType, inCmd.Data)
+		// utils.LogInfo("Decoded command ", inCmd.CmdType, inCmd.Data)
 
 		outChan := make(chan *commands.CmdResult)
 		// Add cmd to be processed onto cmdQ
@@ -48,6 +48,8 @@ func HandleConn(conn net.Conn, cmdQ eventloop.WriteCmdQ) {
 }
 
 func encodeCmdResult(cmdRes *commands.CmdResult) ([]byte, error) {
+	const RESPDELIM = "\r\n"
+
 	switch cmdRes.DataType {
 	case commands.Error:
 		res, err := cmdRes.GetErr()
@@ -71,18 +73,22 @@ func encodeCmdResult(cmdRes *commands.CmdResult) ([]byte, error) {
 			return []byte{}, err
 		}
 
-		return utils.OkRespByte(res), nil
+		if res == nil {
+			str := "$-1" + RESPDELIM
+			return []byte(str), nil
+		} else {
+			strLen := fmt.Sprint(len(*res))
+			str := "$" + strLen + RESPDELIM + *res + RESPDELIM
+			return []byte(str), nil
+		}
 	}
 
 	return []byte{}, errors.New("failed to encode datatype " + string(cmdRes.DataType))
 }
 
 func processRedisCmd(conn net.Conn) (*commands.Command, error) {
-	utils.LogInfo("processRedisCmd")
+	// utils.LogInfo("processRedisCmd")
 	inStream := bufio.NewReader(conn)
-
-	// n, _ := inStream.ReadString('\n')
-	// utils.LogInfo("processRedisCmd:", string(n))
 
 	firstByte, err := inStream.ReadByte()
 	utils.CheckError(err)
@@ -97,7 +103,7 @@ func processRedisCmd(conn net.Conn) (*commands.Command, error) {
 			return nil, err
 		}
 
-		utils.LogInfo("processRedisCmd arrLen", arrLen)
+		// utils.LogInfo("processRedisCmd arrLen", arrLen)
 
 		// err = clearCLRF(inStream)
 		// if err != nil {
@@ -122,7 +128,7 @@ func processRedisCmd(conn net.Conn) (*commands.Command, error) {
 }
 
 func readNBytes(n int, inStream *bufio.Reader) ([]byte, error) {
-	utils.LogInfo("readNBytes", n)
+	// utils.LogInfo("readNBytes", n)
 	var outBytes []byte
 	for i := 0; i < n; i++ {
 		b, err := inStream.ReadByte()
@@ -136,7 +142,7 @@ func readNBytes(n int, inStream *bufio.Reader) ([]byte, error) {
 }
 
 func readArray(n int, inStream *bufio.Reader) ([]string, error) {
-	utils.LogInfo("readArray", n)
+	// utils.LogInfo("readArray", n)
 	var outStr []string
 
 	for i := 0; i < n; i++ {
@@ -174,7 +180,7 @@ func readArray(n int, inStream *bufio.Reader) ([]string, error) {
 }
 
 func readString(n int, inStream *bufio.Reader) (string, error) {
-	utils.LogInfo("readString", n)
+	// utils.LogInfo("readString", n)
 	outBytes, err := readNBytes(n, inStream)
 	if err != nil {
 		return "", err
@@ -184,7 +190,7 @@ func readString(n int, inStream *bufio.Reader) (string, error) {
 }
 
 func readLen(inStream *bufio.Reader) (int, error) {
-	utils.LogInfo("readLen")
+	// utils.LogInfo("readLen")
 	var readLen = 0
 
 	s, err := inStream.ReadString('\n')
@@ -201,7 +207,7 @@ func readLen(inStream *bufio.Reader) (int, error) {
 }
 
 func readCmd(arr []string) (*commands.Command, error) {
-	utils.LogInfo("readCmd", arr)
+	// utils.LogInfo("readCmd", arr)
 	cmdStr := arr[0]
 
 	var cmd *commands.Command
@@ -217,13 +223,33 @@ func readCmd(arr []string) (*commands.Command, error) {
 		cmd = &commands.Command{CmdType: commands.GET, Data: arr[1:]}
 
 	case string(commands.SET):
-		cmd = &commands.Command{CmdType: commands.SET, Data: arr[1:]}
+		cmd = parseSetOptions(arr[1:])
+		// cmd = &commands.Command{CmdType: commands.SET, Data: arr[1:]}
 
 	default:
 		return nil, errors.New("unknown command " + cmdStr)
 	}
 
 	return cmd, nil
+}
+
+func parseSetOptions(arr []string) *commands.Command {
+	// utils.LogInfo("parseSetOptions", arr)
+	expiryIndex := -1
+	for ix, elem := range arr {
+		if elem == "px" {
+			expiryIndex = ix
+			break
+		}
+	}
+
+	// utils.LogInfo("parseSetOptions", expiryIndex)
+
+	if expiryIndex == -1 {
+		return &commands.Command{CmdType: commands.SET, Data: arr}
+	} else {
+		return &commands.Command{CmdType: commands.SETPX, Data: arr}
+	}
 }
 
 func clearCLRF(inStream *bufio.Reader) error {
