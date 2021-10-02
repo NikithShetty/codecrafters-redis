@@ -3,6 +3,7 @@ package eventloop
 import (
 	"codecrafters-redis/app/commands"
 	"fmt"
+	"strings"
 )
 
 func StartEventLoop(cmdQ ReadCmdQ) {
@@ -10,18 +11,33 @@ func StartEventLoop(cmdQ ReadCmdQ) {
 	for cmdChan := range cmdQ {
 		cmd := cmdChan.In
 
-		fmt.Println("Event loop: Got command ", string(cmd.CmdType))
-		// if strings.Contains(cmd, "PING") || strings.Contains(cmd, "ping") {
-		// msg := cmd[5:]
+		var res *commands.CmdResult
 
-		// fmt.Println("msg", msg, len(msg))
-		// if len(msg) > 0 {
-		// 	conn.Write(utils.okRespByte(msg))
-		// } else {
-		cmdChan.Out <- commands.NewSimpleStringResult("PONG")
-		// }
-		// } else {
-		// 	conn.Write(errRespByte("-"))
-		// }
+		fmt.Println("Event loop: Got command ", string(cmd.CmdType))
+
+		switch cmd.CmdType {
+		case commands.ECHO:
+			res = echo(cmd.Data)
+
+		case commands.PING:
+			res = ping(cmd.Data)
+
+		default:
+			res = commands.NewErrResult("unknown command " + string(cmd.CmdType))
+		}
+
+		cmdChan.Out <- res
+	}
+}
+
+func echo(str []string) *commands.CmdResult {
+	return commands.NewBulkStringResult(strings.Join(str, " "))
+}
+
+func ping(str []string) *commands.CmdResult {
+	if len(str) > 0 {
+		return commands.NewBulkStringResult(strings.Join(str, " "))
+	} else {
+		return commands.NewBulkStringResult("PONG")
 	}
 }

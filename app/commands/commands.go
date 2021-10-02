@@ -5,10 +5,10 @@ import "errors"
 type CmdType string
 
 const (
-	ECHO CmdType = "ECHO"
-	PING CmdType = "PING"
-	GET  CmdType = "GET"
-	SET  CmdType = "SET"
+	ECHO CmdType = "echo"
+	PING CmdType = "ping"
+	GET  CmdType = "get"
+	SET  CmdType = "set"
 )
 
 type Command struct {
@@ -59,7 +59,7 @@ func (cmdRes *CmdResult) GetErr() (string, error) {
 		return cmdRes.err, nil
 	}
 
-	return "", errors.New("Ilegal get operation on data type" + string(cmdRes.DataType))
+	return "", errors.New("illegal get operation on data type" + string(cmdRes.DataType))
 }
 
 func (cmdRes *CmdResult) GetSimpleStr() (string, error) {
@@ -67,7 +67,7 @@ func (cmdRes *CmdResult) GetSimpleStr() (string, error) {
 		return cmdRes.simpleString, nil
 	}
 
-	return "", errors.New("Ilegal get operation on data type" + string(cmdRes.DataType))
+	return "", errors.New("illegal get operation on data type" + string(cmdRes.DataType))
 }
 
 func (cmdRes *CmdResult) GetBlkStr() (string, error) {
@@ -75,7 +75,7 @@ func (cmdRes *CmdResult) GetBlkStr() (string, error) {
 		return cmdRes.bulkString, nil
 	}
 
-	return "", errors.New("Ilegal get operation on data type" + string(cmdRes.DataType))
+	return "", errors.New("illegal get operation on data type" + string(cmdRes.DataType))
 }
 
 func (cmdRes *CmdResult) GetArr() ([]string, error) {
@@ -83,5 +83,5 @@ func (cmdRes *CmdResult) GetArr() ([]string, error) {
 		return cmdRes.array, nil
 	}
 
-	return []string{}, errors.New("Ilegal get operation on data type" + string(cmdRes.DataType))
+	return []string{}, errors.New("illegal get operation on data type" + string(cmdRes.DataType))
 }
