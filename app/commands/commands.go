@@ -34,20 +34,20 @@ type CmdResult struct {
 	array        []string
 }
 
-func NewErrResult(resType RedisDataType, err string) *CmdResult {
-	return &CmdResult{DataType: resType, err: err}
+func NewErrResult(err string) *CmdResult {
+	return &CmdResult{DataType: Error, err: err}
 }
 
-func NewSimpleStringResult(resType RedisDataType, str string) *CmdResult {
-	return &CmdResult{DataType: resType, simpleString: str}
+func NewSimpleStringResult(str string) *CmdResult {
+	return &CmdResult{DataType: SimpleString, simpleString: str}
 }
 
-func NewBulkStringResult(resType RedisDataType, bulkStr string) *CmdResult {
-	return &CmdResult{DataType: resType, bulkString: bulkStr}
+func NewBulkStringResult(bulkStr string) *CmdResult {
+	return &CmdResult{DataType: BulkString, bulkString: bulkStr}
 }
 
-func NewArrResult(resType RedisDataType, arr []string) *CmdResult {
-	return &CmdResult{DataType: resType, array: arr}
+func NewArrResult(arr []string) *CmdResult {
+	return &CmdResult{DataType: Array, array: arr}
 }
 
 func (cmdRes *CmdResult) GetCmdResDataType() RedisDataType {

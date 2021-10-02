@@ -1,8 +1,10 @@
 package eventloop
 
+import "codecrafters-redis/app/commands"
+
 type CmdStruct struct {
-	In  []byte
-	Out chan []byte
+	In  *commands.Command
+	Out chan *commands.CmdResult
 }
 
 type CmdQ = chan CmdStruct

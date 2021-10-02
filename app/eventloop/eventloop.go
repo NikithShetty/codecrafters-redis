@@ -1,17 +1,16 @@
 package eventloop
 
 import (
-	"codecrafters-redis/app/utils"
+	"codecrafters-redis/app/commands"
 	"fmt"
 )
 
 func StartEventLoop(cmdQ ReadCmdQ) {
 	fmt.Println("Started event loop")
 	for cmdChan := range cmdQ {
-		fmt.Println("Event loop: Got event")
 		cmd := cmdChan.In
 
-		fmt.Println("Event loop: ", string(cmd))
+		fmt.Println("Event loop: Got command ", string(cmd.CmdType))
 		// if strings.Contains(cmd, "PING") || strings.Contains(cmd, "ping") {
 		// msg := cmd[5:]
 
@@ -19,7 +18,7 @@ func StartEventLoop(cmdQ ReadCmdQ) {
 		// if len(msg) > 0 {
 		// 	conn.Write(utils.okRespByte(msg))
 		// } else {
-		cmdChan.Out <- utils.OkRespByte("PONG")
+		cmdChan.Out <- commands.NewSimpleStringResult("PONG")
 		// }
 		// } else {
 		// 	conn.Write(errRespByte("-"))
